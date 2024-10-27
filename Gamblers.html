@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accumulator Loss Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #e63946;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+        .player {
+            display: flex;
+            align-items: center;
+            background-color: #333;
+            padding: 15px;
+            margin: 10px auto;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            flex-direction: row;
+        }
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: url('https://via.placeholder.com/50') no-repeat center;
+            background-size: cover;
+            border-radius: 50%;
+            border: 2px solid #e63946;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .player-name {
+            font-size: 1.2em;
+            margin-right: auto;
+            text-align: left;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .meter {
+            position: relative;
+            height: 20px;
+            width: 50%;
+            border-radius: 10px;
+            background-color: grey;
+            overflow: hidden;
+        }
+        .meter-fill {
+            height: 100%;
+            width: 0;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+        .black-face {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20%;
+            height: 100%;
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            transition: all 0.5s ease-in-out;
+            display: none;
+        }
+        .controls {
+            display: none;
+            margin-top: 10px;
+            text-align: right;
+        }
+        .edit-btn, .confirm-btn {
+            background-color: #e63946;
+            color: white;
+            padding: 10px 15px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em;
+            border-radius: 5px;
+        }
+        .edit-btn:hover, .confirm-btn:hover {
+            background-color: #d62839;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            margin: 0 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #444;
+            color: white;
+            font-size: 1em;
+        }
+        /* Responsive Styles */
+        @media only screen and (max-width: 600px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            .player {
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            }
+            .avatar {
+                margin-bottom: 10px;
+            }
+            .player-name {
+                text-align: center;
+                font-size: 1.1em;
+            }
+            .meter {
+                width: 90%;
+                margin-bottom: 10px;
+            }
+            .controls {
+                text-align: center;
+                margin: 10px 0;
+            }
+            input[type="number"] {
+                margin: 0;
+                width: 80px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Accumulator Loss Tracker</h1>
+
+    <div id="players-container"></div>
+
+    <button class="edit-btn" onclick="toggleEdit()">Make Changes</button>
+    <button class="confirm-btn" onclick="confirmChanges()">Confirm Changes</button>
+
+    <script>
+        const players = [
+            { name: 'Tadgh', losses: 0 },
+            { name: 'Diarmuid', losses: 0 },
+            { name: 'Eoin', losses: 0 },
+            { name: 'Lee', losses: 0 },
+            { name: 'Dave', losses: 0 },
+            { name: 'Johnny', losses: 0 },
+            { name: 'Ronan', losses: 0 },
+            { name: 'Louis', losses: 0 }
+        ];
+
+        let tempPlayers = JSON.parse(JSON.stringify(players));
+
+        function updateMeters() {
+            const container = document.getElementById('players-container');
+            container.innerHTML = '';
+
+            tempPlayers.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player';
+
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar';
+                avatarDiv.style.backgroundImage = `url('https://via.placeholder.com/50?text=${player.name[0]}')`;
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'player-name';
+                nameDiv.innerText = `${player.name}`;
+
+                const meterDiv = document.createElement('div');
+                meterDiv.className = 'meter';
+
+                const meterFillDiv = document.createElement('div');
+                meterFillDiv.className = 'meter-fill';
+                meterFillDiv.style.width = `${player.losses * 20}%`;
+                meterFillDiv.style.backgroundColor = getColor(player.losses);
+
+                const blackFaceDiv = document.createElement('div');
+                blackFaceDiv.className = 'black-face';
+                blackFaceDiv.innerText = 'Black Face';
+
+                if (player.losses >= 5) {
+                    blackFaceDiv.style.display = 'flex';
+                }
+
+                meterDiv.appendChild(meterFillDiv);
+                meterDiv.appendChild(blackFaceDiv);
+
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'controls';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = player.losses;
+                input.min = 0;
+                input.max = 10;
+                input.onchange = (e) => updateTempLoss(index, parseInt(e.target.value));
+                controlsDiv.appendChild(input);
+
+                playerDiv.appendChild(avatarDiv);
+                playerDiv.appendChild(nameDiv);
+                playerDiv.appendChild(meterDiv);
+                playerDiv.appendChild(controlsDiv);
+
+                container.appendChild(playerDiv);
+            });
+        }
+
+        function getColor(losses) {
+            if (losses === 0) return 'grey';
+            if (losses <= 2) return 'green';
+            if (losses <= 4) return 'orange';
+            return 'red';
+        }
+
+        function updateTempLoss(index, value) {
+            tempPlayers[index].losses = value;
+            updateMeters();
+        }
+
+        function toggleEdit() {
+            document.querySelectorAll('.controls').forEach(control => {
+                control.style.display = control.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+
+        function confirmChanges() {
+            players.forEach((player, index) => {
+                player.losses = tempPlayers[index].losses;
+            });
+            toggleEdit();
+            alert('Changes saved!');
+        }
+
+        updateMeters();
+    </script>
+
+</body>
+</html>
